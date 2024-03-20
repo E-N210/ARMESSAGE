@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>AR.js A-Frame Location-based</title>
+      <!--  IMPORT A-FRAME-->
+    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+
+      <!--  IMPORT AR.JS GEOLOCATION-->
+    <script type='text/javascript' src='https://raw.githack.com/AR-js-org/AR.js/master/three.js/build/ar-threex-location-only.js'></script>
+
+      <!--  IMPORT AFRAME-AR -->
+    <script type='text/javascript' src='https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js'></script>
+      <!--  IMPORT EVENT-SET -->
+    <script src="./superframe-master/components/event-set/dist/aframe-event-set-component.min.js"></script>
+      <!--  IMPORT SUPERFRAME 3D TEXT -->
+    <script src="./superframe-master/components/text-geometry/dist/aframe-text-geometry-component.min.js"></script>
+      <!--  MAIN AR BEHAVIOUR-->
+
+
+    <!-- FONTS -->
+    <script src="./fonts/Honk_Regular.json"></script>
+
+  <style>
+
+      #loading_screen.active{position:
+          absolute;width:100%;height:100%;
+          display:flex;
+          background-color:rgba(60,123,211,1);
+          color: white;
+          z-index: 10;
+          font-size: 2em;
+          font-weight: bold;
+          justify-content: center;
+          font-family: sans-serif;
+          text-align: center;
+          align-items: center;
+          flex-direction: column;
+          vertical-align: middle;
+          margin-top: 0px;
+          margin-bottom: 0px;
+          gap:5vw}
+
+      #loading_screen.inactive{
+        display: none
+        }
+
+      #infoscreen.inactive{display: none}
+
+      #infobutton.active{
+          border-radius: 5%;
+          width:7.5vw;
+          height:7.5vw;
+          background-color: rgba(60,123,211,1);
+          z-index:10;
+          position: absolute;
+          top:2.5%;left:100%;
+          transform: translate(-160%,0%);
+          color: white;
+          font-size: 5vw;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+
+      #infobutton.inactive{
+          border-radius: 5%;
+          width:7.5vw;
+          height:7.5vw;
+          z-index:10;
+          position: absolute;
+          top:2.5%;left:100%;
+          transform: translate(-160%,0%);
+          color: white;
+          font-size: 5vw;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          font-family: sans-serif;
+          background-color: rgba(30,40,54,0)}
+
+      #infoscreen.active{
+          position: absolute;
+          top:0%;left:0%;
+          display: flex;
+          justify-content: space-around;
+          align-items: center;
+          text-align: center;
+          width: 100%;
+          height:100%;
+          background-color: rgba(60,123,211,0.7);
+          z-index:8;
+          gap:10vw;
+
+        }
+
+
+
+        #spinner {
+          display: inline-block;
+          width: 12.5vw;
+          height: 12.5vw;
+          border: 1.5vw solid rgba(255,255,255,.3);
+          border-radius: 50%;
+          border-top-color: #fff;
+          animation: spin 1s ease-in-out infinite;
+          -webkit-animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+          to { -webkit-transform: rotate(360deg); }
+        }
+        @-webkit-keyframes spin {
+          to { -webkit-transform: rotate(360deg); }
+        }
+
+        #goleft{color:white;
+
+          font-family: sans-serif;
+          font-size: 3em;
+          margin-left:25px
+        }
+
+        #goright{color:white;
+          font-family: sans-serif;
+          font-size: 3em;
+          margin-right: 25px
+        }
+
+        .activeinfo{
+          display: flex;
+          opacity: 1;
+          justify-content: center;
+          align-items: center;
+          color: white;
+          font-size: 1em;
+          font-family: sans-serif;
+          flex-direction: column;
+          animation: fadeIn 1s ease-in;
+          gap:20px;
+          align-items: stretch;
+        }
+
+
+        .inactiveinfo{display: none;}
+
+        #noPOIscreen.active{display: flex;
+        flex-direction: column;
+        justify-content: center;
+        font-family: sans-serif;
+        text-align: center;
+        font-weight: bold;
+        align-items: center;
+        position: absolute; top:0%;
+        width:100%;height:100%;
+        background-color: rgba(60,123,211,0.7);
+        color:white;
+        gap:2vh}
+
+        #noPOIscreen.active.unimportant{font-size: 1vh; font-weight: normal;font-family: sans-serif;}
+
+
+        #noPOIscreen.inactive{display: none}
+
+        #POIscreen.active{display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        font-family: sans-serif;
+        font-size: 5vh;
+        text-align: center;
+        font-weight: bold;
+        align-items: center;
+        position: absolute; top:85%;
+        width:100%;height:10%;
+        background-color: rgba(60,123,211,0);
+        color:white;
+        gap:10vh;
+        animation: slowfade;
+        animation-duration: 2s;
+        animation-iteration-count: 4;
+        opacity: 0}
+
+        @keyframes slowfade {
+        0%{opacity: 0}
+        50%{opacity: 1}
+        100%{opacity: 0}
+        }
+
+        #POIscreen.inactive{display: none}
+
+        #logoBanner{
+          position: absolute;
+          top:2.5%;left:50%;
+          transform: translate(-50%,0%);
+          height: 5vh;
+          background-size: contain;
+          z-index: 20
+        }
+
+        .formButton{background-color: rgb(210,210,225);
+          opacity: 1;
+          width: auto;
+          border-radius: 50px;
+          border-width: 0px;
+          color: rgb(60,123,211);
+          font-family: sans-serif;
+          font-weight: bold;
+          font-size: 1em;
+          width:inherit;
+          padding-left: 20px;
+          padding-right: 20px;
+          padding-top: 10px;
+          padding-bottom: 10px}
+
+          .formButton:hover{background-color: white;
+            opacity: 1;
+            width: auto;
+            border-radius: 50px;
+            border-width: 0px;
+            color: rgb(90,120,162);
+            font-family: sans-serif;
+            font-weight: bold;
+            font-size: 1em;
+            width:inherit;}
+
+            .formButton:pressed{background-color: rgb(180,180,195);
+              opacity: 1;
+              width: auto;
+              border-radius: 50px;
+              border-width: 0px;
+              color: rgb(90,120,162);
+              font-family: sans-serif;
+              font-weight: bold;
+              font-size: 1em;
+              width:inherit;}
+
+              .textlink:hover{color:white}
+              a{color:white}
+              a:visited{color:white}
+
+
+        p{width:80%}
+
+        #message{
+            width:60%;
+            height:50%;
+            font-weight: normal;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 1em;
+            font-family: sans-serif;
+            flex-direction: column;
+            animation: fadeIn 2s ease-in
+        }
+
+        #knowmore{text-decoration: underline;}
+
+        .inactivemessage{
+            display: none;
+        }
+
+        .activemessage{
+            display: flex;
+        }
+
+        .alert{
+          line-height: normal;
+          animation: slowfade 2s infinite;
+        }
+
+        @keyframes fadeIn {
+          from{opacity:0}
+          to{opacity:1}
+
+        }
+
+        @media only screen and (max-width: 900px) {
+
+
+
+      }
+
+    </style>
+  </head>
+
+  <body>
+  <div id="loading_screen" class="active">
+    <div> We are Loading </br> the Experience</div>
+    <div id ="spinner"></div>
+  </div>
+  <a-scene vr-mode-ui='enabled: false'
+      arjs='sourceType: webcam;
+      videoTexture: true; debugUIEnabled: false'
+      renderer='antialias: true; alpha: true'
+      shadow = 'enabled:true; type: basic'
+
+      id="a-scene">
+    <a-asset-item id="optimerBoldFont" src="./fonts/Honk_Regular.json"></a-asset-item>
+    <a-camera id="camera" gps-new-camera='gpsMinDistance: 2' look-controls mouse-cursor  shadow="near: 0.5; far: 50; cast-soft: true">
+      <a-entity cursor="rayOrigin: mouse"></a-entity>
+    </a-camera>
+
+      <a-entity gps-new-entity-place ="latitude: 45.4616004; longitude:  9.2252032, ">
+            <!--    THIS SLOT IS FOR TEMPORARY TEST ENTITIES    -->
+            <!--<a-entity text-geometry="value: HELLO WORLD" look-at ="#camera"></a-entity>-->
+
+
+      </a-entity>
+
+
+</a-scene>
+
+
+<script>
+
+AFRAME.registerComponent('look-at', {
+  schema: { type: 'selector' },
+
+  tick: function () {
+    this.el.object3D.lookAt(this.data.object3D.position)
+  }
+
+})
+          // Set the scale attribute
+
+
+  let testEntityAdded = false;
+
+  const el = document.querySelector("[gps-new-camera]");
+  let globalRows = []; // Global variable to store rows
+  let globalColumns = []; // Global variable to store columns
+
+  async function getList() {
+    const response = await fetch('data.csv');
+    const csvData =  await response.text();
+    const rows = csvData.split('\n'); // Split CSV data into rows
+
+    globalRows = rows;
+
+    // Process CSV data as needed
+
+    // Example: Log each row of CSV data
+    rows.forEach(row => {
+        const columns = row.split(';');
+        const name = columns[0];
+        const text = columns[1];
+        const font = columns[2];
+        const lon = columns[3];
+        const lat = columns[4]
+
+        globalColumns.push(columns);
+      //  console.log(name)
+    });
+}
+
+getList().then(()=>{
+
+
+  el.addEventListener("gps-camera-update-position", async e => {
+      if(!testEntityAdded) {
+        document.getElementById("loading_screen").classList.add("inactive")
+        document.getElementById("loading_screen").classList.remove("active")
+
+        //UBIQUITOUS TEST WITH FREE PALESTINE
+
+      //  alert(`Got first GPS position: lon ${e.detail.position.longitude} lat ${e.detail.position.latitude}`);
+          // Add a box to the north of the initial GPS position
+          const entity = document.createElement("a-entity");
+            entity.setAttribute('id', "TextEntity")
+            entity.setAttribute("text-geometry",{value: "FREE PALESTINE"})
+            entity.setAttribute("scale", {
+                x: 3000,
+                y: 3000,
+                z: 3000
+              });
+            entity.setAttribute("position", {
+                x: 0,
+                y: 6000,
+                z: 0
+              });
+
+              entity.setAttribute("rotation", {
+                x: 90,
+                y: -90,
+                z: 0
+              });
+
+              entity.setAttribute('material', { color: 'white' } );
+              entity.setAttribute('gps-new-entity-place', {
+                latitude: e.detail.position.latitude + 0.05,
+                longitude: e.detail.position.longitude+ 0.02
+              });
+              document.querySelector("a-scene").appendChild(entity);
+            }
+
+
+        for(i=0;i< globalRows.length;i++){
+
+            console.log(globalColumns[i][4]);
+            const distance = distanceInKm(e.detail.position.latitude, e.detail.position.longitude, globalColumns[i][4],globalColumns[i][3])
+            console.log(distance)
+
+            if(distance<=0.05){
+
+
+              const entity = document.createElement("a-entity");
+                entity.setAttribute('id', globalColumns[i][1])
+                entity.setAttribute("text-geometry",{value: globalColumns[i][1]})
+                entity.setAttribute("scale", {
+                    x: 2,
+                    y: 2,
+                    z: 2
+                  });
+
+                  entity.setAttribute('material', { color: 'white' } );
+                  entity.setAttribute('gps-new-entity-place', {
+                    latitude: globalColumns[i][4],
+                    longitude: globalColumns[i][3]
+                  });
+                  entity.setAttribute("look-at","#camera")
+
+                  document.querySelector("a-scene").appendChild(entity);
+                }
+                console.log("MESSAGE WAS ADDED")
+
+            else{
+              console.log("MESSAGE IS TOO FAR AWAY")
+            }
+          }
+
+
+      });
+
+    })
+
+  el.addEventListener("gps-camera-update-position-unavailable", () => {
+        alert("Access to position is no longer available.");
+    });
+
+
+
+
+    function degreesToRadians(degrees) {
+      return degrees * Math.PI / 180;
+    }
+
+    function distanceInKm(lat1, lon1, lat2, lon2) {
+      var earthRadiusKm = 6371;
+
+      var dLat = degreesToRadians(lat2-lat1);
+      var dLon = degreesToRadians(lon2-lon1);
+
+      lat1 = degreesToRadians(lat1);
+      lat2 = degreesToRadians(lat2);
+
+      var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.sin(dLon/2) * Math.sin(dLon/2) * Math.cos(lat1) * Math.cos(lat2);
+      var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return earthRadiusKm * c;
+    }
+
+
+
+
+
+// Call the function to fetch CSV data
+
+
+
+</script>
+
+
+
+  </body>
+</html>
